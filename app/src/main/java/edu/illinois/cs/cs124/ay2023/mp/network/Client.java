@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import edu.illinois.cs.cs124.ay2023.mp.application.CourseableApplication;
 import edu.illinois.cs.cs124.ay2023.mp.helpers.ResultMightThrow;
+import edu.illinois.cs.cs124.ay2023.mp.models.Course;
 import edu.illinois.cs.cs124.ay2023.mp.models.Summary;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -61,6 +62,33 @@ public final class Client {
             },
             error -> callback.accept(new ResultMightThrow<>(error)));
     requestQueue.add(summaryRequest);
+  }
+
+  public void getCourse(Summary summary, Consumer<ResultMightThrow<Course>> callback) {
+    // Use the subject and number from the summary to construct the request URL
+    String url = CourseableApplication.SERVER_URL
+        + "/course/" + summary.getSubject()
+        + "/" + summary.getNumber();
+
+    StringRequest courseRequest =
+        new StringRequest(
+            Request.Method.GET,
+            url,
+            response -> {
+              try {
+                // Assuming 'Course' is the correct class to hold the course data
+                // and has a constructor that takes a JSON string
+                Course course = OBJECT_MAPPER.readValue(response, Course.class);
+                callback.accept(new ResultMightThrow<>(course));
+              } catch (JsonProcessingException e) {
+                // This exception handling assumes ResultMightThrow is a
+                // class that can take an exception as an argument
+                callback.accept(new ResultMightThrow<>(e));
+              }
+            },
+            error -> callback.accept(new ResultMightThrow<>(error)));
+    // Add the request to the queue to be executed
+    requestQueue.add(courseRequest);
   }
 
   // You should not need to modify the code below

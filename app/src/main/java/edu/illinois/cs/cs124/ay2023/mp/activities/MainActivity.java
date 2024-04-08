@@ -1,5 +1,7 @@
 package edu.illinois.cs.cs124.ay2023.mp.activities;
 
+import static edu.illinois.cs.cs124.ay2023.mp.helpers.Helpers.OBJECT_MAPPER;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.SearchView;
@@ -8,6 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.illinois.cs.cs124.ay2023.mp.R;
 import edu.illinois.cs.cs124.ay2023.mp.adapters.SummaryListAdapter;
 import edu.illinois.cs.cs124.ay2023.mp.application.CourseableApplication;
@@ -48,7 +51,24 @@ public final class MainActivity extends AppCompatActivity
     setTitle("Search Courses");
 
     // Setup the list adapter for the list of summaries
-    listAdapter = new SummaryListAdapter(summaries, this);
+    listAdapter = new SummaryListAdapter(summaries, this, summary -> {
+      Intent courseIntent = new Intent(this, CourseActivity.class);
+      // Serialize the summary to a JSON string
+      String summaryJson = null;
+      try {
+        summaryJson = OBJECT_MAPPER.writeValueAsString(summary);
+      } catch (JsonProcessingException e) {
+        e.printStackTrace();
+        // Handle the exception (e.g., show an error message or log the error)
+        return;
+      }
+
+      // Add the serialized summary string as an extra to the intent
+      courseIntent.putExtra("summary", summaryJson);
+
+      // Start the CourseActivity with the intent
+      startActivity(courseIntent);
+    });
 
     // Add the list to the layout
     RecyclerView recyclerView = findViewById(R.id.recycler_view);
