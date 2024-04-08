@@ -87,7 +87,7 @@ public final class Server extends Dispatcher {
 
     // Print out for debugging
     String key = subject + " " + number;
-    System.out.println("Searching for course: " + subject + " " + number);
+//    System.out.println("Searching for course: " + subject + " " + number);
     try {
       Course out = courseMap.get(key);
       if (out != null) {
