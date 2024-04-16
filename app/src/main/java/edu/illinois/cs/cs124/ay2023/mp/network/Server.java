@@ -6,7 +6,6 @@ import static edu.illinois.cs.cs124.ay2023.mp.helpers.Helpers.OBJECT_MAPPER;
 import androidx.annotation.NonNull;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import edu.illinois.cs.cs124.ay2023.mp.activities.MainActivity;
 import edu.illinois.cs.cs124.ay2023.mp.application.CourseableApplication;
 import edu.illinois.cs.cs124.ay2023.mp.models.Course;
 import edu.illinois.cs.cs124.ay2023.mp.models.Rating;
@@ -112,7 +111,7 @@ public final class Server extends Dispatcher {
   }
 //  refactor get and put rating
   private MockResponse getRating(String path) {
-    System.out.println("getRating Server");
+//    System.out.println("getRating Server");
     // Split the path by '/' and remove empty parts caused by leading '/'
     String[] parts = path.split("/");
     List<String> validParts = new ArrayList<>();
@@ -135,9 +134,9 @@ public final class Server extends Dispatcher {
 
     // Retrieve the rating from the map
     Rating rating = ratingMap.get(key);
-    System.out.println("key: " + key);
+//    System.out.println("key: " + key);
     if (rating != null) {
-      System.out.println("rating: " + rating.getRating());
+//      System.out.println("rating: " + rating.getRating());
       // Rating found, convert the Rating object to JSON string
       try {
         String ratingJSON = OBJECT_MAPPER.writeValueAsString(rating);
@@ -156,7 +155,7 @@ public final class Server extends Dispatcher {
   }
 
   private MockResponse postRating(RecordedRequest request) {
-    System.out.println("postRating Server");
+//    System.out.println("postRating Server");
     // Can only be used once
     String body = request.getBody().readUtf8();
     try {
@@ -166,7 +165,7 @@ public final class Server extends Dispatcher {
       String key = subject + " " + number;
 
       if (!ratingMap.containsKey(key)) {
-        System.out.println("key not found: " + key);
+//        System.out.println("key not found: " + key);
         return HTTP_NOT_FOUND;
       }
 
@@ -175,8 +174,8 @@ public final class Server extends Dispatcher {
 
       String ratingPath = "/rating/" + rating.getSummary().getSubject()
           + "/" + rating.getSummary().getNumber();
-      System.out.println(ratingPath);
-      System.out.println(rating.getRating());
+//      System.out.println(ratingPath);
+//      System.out.println(rating.getRating());
       return new MockResponse()
           .setResponseCode(HttpURLConnection.HTTP_MOVED_TEMP)
           .setHeader("Location", ratingPath);

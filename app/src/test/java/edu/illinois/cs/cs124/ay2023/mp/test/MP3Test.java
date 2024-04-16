@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import edu.illinois.cs.cs124.ay2023.mp.R;
 import edu.illinois.cs.cs124.ay2023.mp.activities.CourseActivity;
 import edu.illinois.cs.cs124.ay2023.mp.models.Course;
+import edu.illinois.cs.cs124.ay2023.mp.models.Rating;
 import edu.illinois.cs.cs124.ay2023.mp.models.Summary;
 import edu.illinois.cs.cs124.ay2023.mp.network.Client;
 import edu.illinois.cs.cs124.ay2023.mp.network.Server;
