@@ -6,8 +6,10 @@ import static edu.illinois.cs.cs124.ay2023.mp.helpers.Helpers.OBJECT_MAPPER;
 import androidx.annotation.NonNull;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import edu.illinois.cs.cs124.ay2023.mp.activities.MainActivity;
 import edu.illinois.cs.cs124.ay2023.mp.application.CourseableApplication;
 import edu.illinois.cs.cs124.ay2023.mp.models.Course;
+import edu.illinois.cs.cs124.ay2023.mp.models.Rating;
 import edu.illinois.cs.cs124.ay2023.mp.models.Summary;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -40,6 +42,7 @@ public final class Server extends Dispatcher {
   /** List of summaries as a JSON string. */
   private final String summariesJSON;
   private Map<String, Course> courseMap = new HashMap<>();
+  private Map<String, Rating> ratingMap = new HashMap<>();
 
   /** Helper method to create a 200 HTTP response with a body. */
   private MockResponse makeOKJSONResponse(@NonNull String body) {
@@ -107,7 +110,81 @@ public final class Server extends Dispatcher {
     // If no course is found, return a not found response
     return HTTP_NOT_FOUND;
   }
+//  refactor get and put rating
+  private MockResponse getRating(String path) {
+    System.out.println("getRating Server");
+    // Split the path by '/' and remove empty parts caused by leading '/'
+    String[] parts = path.split("/");
+    List<String> validParts = new ArrayList<>();
+    for (String part : parts) {
+      if (!part.isEmpty()) {
+        validParts.add(part);
+      }
+    }
+    // Check if the path format is correct: ['', 'course', '{subject}', '{number}']
+    if (validParts.size() != 3 || !validParts.get(0).equalsIgnoreCase("rating")) {
+      // If not, this is a bad request
+      return HTTP_BAD_REQUEST;
+    }
 
+    String subject = validParts.get(1);
+    String number = validParts.get(2);
+
+    // Construct the key to retrieve the rating
+    String key = subject + " " + number;
+
+    // Retrieve the rating from the map
+    Rating rating = ratingMap.get(key);
+    System.out.println("key: " + key);
+    if (rating != null) {
+      System.out.println("rating: " + rating.getRating());
+      // Rating found, convert the Rating object to JSON string
+      try {
+        String ratingJSON = OBJECT_MAPPER.writeValueAsString(rating);
+        // Return OK response with rating details
+        return makeOKJSONResponse(ratingJSON);
+      } catch (JsonProcessingException e) {
+        e.printStackTrace();
+        return new MockResponse()
+            .setResponseCode(HttpURLConnection.HTTP_INTERNAL_ERROR)
+            .setBody("500: Internal Error");
+      }
+    } else {
+      // If no course is found, return a not found response
+      return HTTP_NOT_FOUND;
+    }
+  }
+
+  private MockResponse postRating(RecordedRequest request) {
+    System.out.println("postRating Server");
+    // Can only be used once
+    String body = request.getBody().readUtf8();
+    try {
+      Rating rating = OBJECT_MAPPER.readValue(body, Rating.class);
+      String subject = rating.getSummary().getSubject();
+      String number =  rating.getSummary().getNumber();
+      String key = subject + " " + number;
+
+      if (!ratingMap.containsKey(key)) {
+        System.out.println("key not found: " + key);
+        return HTTP_NOT_FOUND;
+      }
+
+      // Save the rating for GET /rating/
+      ratingMap.put(key, rating);
+
+      String ratingPath = "/rating/" + rating.getSummary().getSubject()
+          + "/" + rating.getSummary().getNumber();
+      System.out.println(ratingPath);
+      System.out.println(rating.getRating());
+      return new MockResponse()
+          .setResponseCode(HttpURLConnection.HTTP_MOVED_TEMP)
+          .setHeader("Location", ratingPath);
+    } catch (JsonProcessingException e) {
+      return HTTP_BAD_REQUEST;
+      //throw new RuntimeException(e);
+    }
+  }
   /**
    * HTTP request dispatcher.
    *
@@ -135,11 +212,18 @@ public final class Server extends Dispatcher {
             .setResponseCode(HttpURLConnection.HTTP_OK);
       } else if (path.equals("/reset/") && method.equals("GET")) {
         // Used to reset the server during testing
+        // NEED TO RESET
+        resetRatings();
         return new MockResponse().setBody("200: OK").setResponseCode(HttpURLConnection.HTTP_OK);
       } else if (path.equals("/summary/") && method.equals("GET")) {
         return getSummaries();
       } else if (path.startsWith("/course/") && method.equals("GET")) {
         return getCourse(path);
+      } else if (path.startsWith("/rating/") && method.equals("GET")) {
+        return getRating(path);
+      } else if (path.equals("/rating/") && method.equals("POST")) {
+//        System.out.println("Dispatch reached postRating");
+        return postRating(request);
       } else {
         // Default is not found
         return HTTP_NOT_FOUND;
@@ -271,11 +355,23 @@ public final class Server extends Dispatcher {
         String key = course.getSubject() + " " + course.getNumber();
         courseMap.put(key, course);
         summaries.add(summary);
+        // Create a default Rating object
+        Rating rating = new Rating(summary, Rating.NOT_RATED);
+        // Construct the key (subject + " " + number)
+        String keyRating = summary.getSubject() + " " + summary.getNumber();
+        // Add the default rating to the map
+        ratingMap.put(keyRating, rating);
       }
       // Convert the List<Summary> to a String and return it
       return OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(summaries);
     } catch (JsonProcessingException e) {
       throw new IllegalStateException(e);
+    }
+  }
+  private void resetRatings() {
+    for (Map.Entry<String, Rating> entry : ratingMap.entrySet()) {
+      Rating rating = entry.getValue();
+      rating.resetRating();
     }
   }
 }
