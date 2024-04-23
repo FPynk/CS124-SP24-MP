@@ -93,7 +93,6 @@ public final class Client {
     // Add the request to the queue to be executed
     requestQueue.add(courseRequest);
   }
-  // TODO MP3
   public void getRating(@NonNull Summary summary, Consumer<ResultMightThrow<Rating>> callback) {
     // Use the subject and number from the summary to construct the request URL
     String url = CourseableApplication.SERVER_URL
